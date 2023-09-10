@@ -67,7 +67,6 @@ setuptools.setup(
         "sacrebleu>=1.5.0",
         "scikit-learn>=0.24.1",
         "sqlitedict",
-        "torch>=1.8",
         "tqdm-multiprocess",
         "transformers>=4.1",
         "zstandard",
