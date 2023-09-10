@@ -57,11 +57,10 @@ def check_prompt_config(config: dict[str, str]) -> List[dict[str, str]]:
                                 config["task"]
                                 if "task" in config
                                 else get_task_name_from_config(config),
-                                prompt_variation,
+                                prompt_variation.split(':')[0],
                             ]
                         )
-                    },
-                    **{"output_type": "greedy_until"},
+                    }
                 }
             )
     else:
