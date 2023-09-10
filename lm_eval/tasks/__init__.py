@@ -113,7 +113,7 @@ def check_prompt_config(
                         )
                     },
                     **{"output_type": "generate_until"},
-                }
+               }
             )
     else:
         all_configs.append(config)

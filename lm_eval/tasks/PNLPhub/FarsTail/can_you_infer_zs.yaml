@@ -1,0 +1,14 @@
+task: can_you_infer_zs
+dataset_path: PNLPhub/FarsTail
+dataset_name: null
+output_type: multiple_choice
+use_prompt: "promptsource:can_you_infer_zs"
+training_split: train
+validation_split: validation
+test_split: test
+metric_list:
+  - metric: acc
+    aggregation: mean
+    higher_is_better: true
+    ignore_case: true
+    ignore_punctuation: true
