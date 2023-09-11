@@ -56,7 +56,6 @@ setuptools.setup(
         "accelerate>=0.21.0",
         "evaluate",
         "datasets>=2.0.0",
-        "evaluate>=0.4.0",
         "jsonlines",
         "numexpr",
         "omegaconf>=2.2",
