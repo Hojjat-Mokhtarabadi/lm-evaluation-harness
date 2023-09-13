@@ -1,9 +1,9 @@
-group: farstail
-task: can_you_infer_zs
-dataset_path: PNLPhub/FarsTail
+group: digi-sentiment
+task: specify_categ_zs
+dataset_path: PNLPhub/digikala-sentiment-analysis
 dataset_name: null
 output_type: multiple_choice
-use_prompt: "promptsource:can_you_infer_zs"
+use_prompt: "promptsource:specify_categ_zs"
 training_split: train
 validation_split: validation
 test_split: test

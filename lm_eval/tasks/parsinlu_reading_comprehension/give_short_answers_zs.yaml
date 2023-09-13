@@ -1,0 +1,12 @@
+group: parsinlu_reading_comprehension
+task: give_short_answers_zs
+dataset_path: parsinlu_reading_comprehension
+dataset_name: null
+output_type: greedy_until
+use_prompt: "promptsource:give_short_answers_zs"
+training_split: train
+validation_split: validation
+test_split: test
+metric_list:
+  - metric: perplexity
+  - metric: bleu

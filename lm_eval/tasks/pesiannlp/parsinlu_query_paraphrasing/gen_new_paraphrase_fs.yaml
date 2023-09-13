@@ -1,0 +1,12 @@
+group: parsinlu_paraphrase
+task: gen_new_paraphrase_fs
+dataset_path: persiannlp/parsinlu_query_paraphrasing
+dataset_name: null
+output_type: greedy_until
+use_prompt: "promptsource:gen_new_paraphrase_fs"
+training_split: train
+validation_split: validation
+test_split: test
+metric_list:
+  - metric: perplexity
+  - metric: bleu

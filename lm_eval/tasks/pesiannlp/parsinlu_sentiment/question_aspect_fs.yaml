@@ -1,0 +1,15 @@
+group: parsinlu_sentiment
+task: question_aspect_fs
+dataset_path: persiannlp/parsinlu_sentiment
+dataset_name: null
+output_type: multiple_choice
+use_prompt: "promptsource:question_aspect_fs"
+training_split: train
+validation_split: null
+test_split: null
+metric_list:
+  - metric: acc
+    aggregation: mean
+    higher_is_better: true
+    ignore_case: true
+    ignore_punctuation: true

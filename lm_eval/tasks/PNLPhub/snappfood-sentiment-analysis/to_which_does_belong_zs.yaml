@@ -1,9 +1,9 @@
-group: farstail
-task: can_you_infer_zs
-dataset_path: PNLPhub/FarsTail
+group: snapp_sentiment
+task: to_which_does_belong_zs
+dataset_path: PNLPhub/snappfood-sentiment-analysis
 dataset_name: null
 output_type: multiple_choice
-use_prompt: "promptsource:can_you_infer_zs"
+use_prompt: "promptsource:to_which_does_belong_zs"
 training_split: train
 validation_split: validation
 test_split: test

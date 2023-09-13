@@ -1,0 +1,12 @@
+group: snapp_sentiment
+task: gen_sentiment_fs
+dataset_path: PNLPhub/snappfood-sentiment-analysis
+dataset_name: null
+output_type: greedy_until
+use_prompt: "promptsource:gen_sentiment_fs"
+training_split: train
+validation_split: validation
+test_split: test
+metric_list:
+  - metric: perplexity
+  - metric: bleu

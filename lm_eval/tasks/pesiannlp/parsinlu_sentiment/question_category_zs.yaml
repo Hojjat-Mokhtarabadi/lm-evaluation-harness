@@ -1,0 +1,12 @@
+group: parsinlu_sentiment
+task: question_category_zs
+dataset_path: PNLPhub/parsinlu_sentiment
+dataset_name: null
+output_type: greedy_until
+use_prompt: "promptsource:question_category_zs"
+training_split: train
+validation_split: null
+test_split: null
+metric_list:
+  - metric: perplexity
+  - metric: bleu

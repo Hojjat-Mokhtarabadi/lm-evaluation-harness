@@ -1,0 +1,12 @@
+group: persian_qa
+task: answer_Q_A_zs
+dataset_path: SajjadAyoubi/persian_qa
+dataset_name: null
+output_type: greedy_until
+use_prompt: "promptsource:answer_Q_A_zs"
+training_split: train
+validation_split: validation
+test_split: null
+metric_list:
+  - metric: perplexity
+  - metric: bleu
