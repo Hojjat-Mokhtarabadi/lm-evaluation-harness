@@ -1,9 +1,9 @@
-group: farstail
-task: can_you_infer_zs
-dataset_path: PNLPhub/FarsTail
+group: parsinlu_paraphrase
+task: given_sent1_sent2_paraphrase_fs
+dataset_path: persiannlp/parsinlu_query_paraphrasing
 dataset_name: null
 output_type: multiple_choice
-use_prompt: "promptsource:can_you_infer_zs"
+use_prompt: "promptsource:given_sent1_sent2_paraphrase_fs"
 training_split: train
 validation_split: validation
 test_split: test

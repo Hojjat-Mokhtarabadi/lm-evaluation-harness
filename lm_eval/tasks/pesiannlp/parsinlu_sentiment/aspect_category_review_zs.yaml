@@ -1,0 +1,12 @@
+group: parsinlu_sentiment
+task: aspect_category_review_zs
+dataset_path: PNLPhub/parsinlu_sentiment
+dataset_name: null
+output_type: greedy_until
+use_prompt: "promptsource:aspect_category_review_zs"
+training_split: train
+validation_split: null
+test_split: null
+metric_list:
+  - metric: perplexity
+  - metric: bleu

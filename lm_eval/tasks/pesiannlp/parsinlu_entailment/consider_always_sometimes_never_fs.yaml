@@ -1,9 +1,9 @@
-group: farstail
-task: can_you_infer_zs
-dataset_path: PNLPhub/FarsTail
+group: parsinlu_entailment
+task: consider_always_sometimes_never_fs
+dataset_path: persiannlp/parsinlu_entialment
 dataset_name: null
 output_type: multiple_choice
-use_prompt: "promptsource:can_you_infer_zs"
+use_prompt: "promptsource:consider_always_sometimes_never_fs"
 training_split: train
 validation_split: validation
 test_split: test

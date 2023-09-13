@@ -1,0 +1,11 @@
+group: farstail
+task: label_to_premise_zs
+dataset_path: PNLPhub/FarsTail
+dataset_name: null
+output_type: greedy_until
+use_prompt: "promptsource:label_to_premise_zs"
+training_split: train
+validation_split: validation
+test_split: test
+metric_list:
+  - metric: bleu

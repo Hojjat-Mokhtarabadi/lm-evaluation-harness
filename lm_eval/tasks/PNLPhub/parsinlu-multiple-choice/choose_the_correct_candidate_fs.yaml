@@ -1,9 +1,9 @@
-group: farstail
-task: can_you_infer_zs
-dataset_path: PNLPhub/FarsTail
+group: parsinlu-multiple-choice
+task: choose_the_correct_candidate_fs
+dataset_path: PNLPhub/parsinlu-multiple-choice
 dataset_name: null
 output_type: multiple_choice
-use_prompt: "promptsource:can_you_infer_zs"
+use_prompt: "promptsource:choose_the_correct_candidate_fs"
 training_split: train
 validation_split: validation
 test_split: test
