@@ -3,10 +3,20 @@ task: gen_sentiment_fs
 dataset_path: PNLPhub/snappfood-sentiment-analysis
 dataset_name: null
 output_type: greedy_until
-use_prompt: "promptsource:gen_sentiment_fs"
+# use_prompt: "promptsource:gen_sentiment_fs"
+doc_to_text: "\u0627\u062D\u0633\u0627\u0633 \u0645\u062A\u0646  \u0631\u0627 \u0628\
+      \u0646\u0648\u06CC\u0633\u061F \u0646\u0627\u0631\u0627\u062D\u062A, \u062E\u0648\
+      \u0634\u062D\u0627\u0644 \n\n\u0645\u062A\u0646: {{comment}}\n\u0627\u062D\u0633\
+      \u0627\u0633: <|startoftext|>"
+doc_to_target: "\n{% if label==\"SAD\" %}\n\u0646\u0627\u0631\u0627\u062D\
+      \u062A\n{% else %}\n\u062E\u0648\u0634\u062D\u0627\u0644\n{% endif %}\n"
+# target_delimiter: <|startoftext|>
 training_split: train
 validation_split: validation
 test_split: test
 metric_list:
-  - metric: perplexity
-  - metric: bleu
+  - metric: exact_match
+    aggregation: mean
+    higher_is_better: true
+  - metric: bleu  
+    aggregation: bleu

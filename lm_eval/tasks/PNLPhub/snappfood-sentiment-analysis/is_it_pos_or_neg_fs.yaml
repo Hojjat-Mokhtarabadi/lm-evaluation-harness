@@ -3,7 +3,15 @@ task: is_it_pos_or_neg_fs2
 dataset_path: PNLPhub/snappfood-sentiment-analysis
 dataset_name: null
 output_type: multiple_choice
-use_prompt: "promptsource:is_it_pos_or_neg_fs2"
+# use_prompt: "promptsource:is_it_pos_or_neg_fs2"
+doc_to_text: "\u06A9\u0627\u0645\u0646\u062A \u0632\u06CC\u0631 \u0645\u062B\u0628\u062A\
+      \ \u0627\u0633\u062A \u06CC\u0627 \u0645\u0646\u0641\u06CC\u061F \n\n\u06A9\u0627\
+      \u0645\u0646\u062A: {{comment}}\n\u0646\u0642\u062F:\n"
+doc_to_target: "{% if label == \"\
+      SAD\" %}\n \u0645\u0646\u0641\u06CC\n{% else %}\n\u0645\u062B\u0628\u062A\n\
+      {% endif %}"
+doc_to_choice: ["\u0645\u062B\u0628\u062A", "\u0645\u0646\u0641\u06CC"]
+target_delimiter: <|startoftext|>
 training_split: train
 validation_split: validation
 test_split: test
