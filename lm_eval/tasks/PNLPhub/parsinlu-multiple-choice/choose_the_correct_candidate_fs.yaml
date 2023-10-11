@@ -4,6 +4,7 @@ dataset_path: PNLPhub/parsinlu-multiple-choice
 dataset_name: null
 output_type: multiple_choice
 use_prompt: "promptsource:choose_the_correct_candidate_fs"
+target_delimiter: <|startoftext|>
 training_split: train
 validation_split: validation
 test_split: test

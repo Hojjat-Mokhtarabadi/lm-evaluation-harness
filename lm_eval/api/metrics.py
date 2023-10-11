@@ -12,7 +12,11 @@ from lm_eval.api.registry import register_metric, register_aggregation
 # Register Aggregations First
 @register_aggregation("mean")
 def mean(arr):
-    return sum(arr) / len(arr)
+    try: 
+        return sum(arr) / len(arr)
+    except:
+        print(arr)
+        return sum(arr)
 
 
 @register_aggregation("median")

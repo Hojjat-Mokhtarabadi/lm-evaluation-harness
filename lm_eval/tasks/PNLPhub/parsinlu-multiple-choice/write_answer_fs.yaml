@@ -1,12 +1,19 @@
-group: parsinlu-multiple-choice
+group: parsinlu-multiple-choice2
 task: write_answer_fs
 dataset_path: PNLPhub/parsinlu-multiple-choice
 dataset_name: null
 output_type: greedy_until
-use_prompt: "promptsource:write_answer_fs"
+# use_prompt: "promptsource:write_answer_fs"
+doc_to_text: "\u062C\u0648\u0627\u0628 \u0633\u0648\u0627\u0644 \u0631\u0627 \u0628\u0646\
+      \u0648\u06CC\u0633\n\n\u0633\u0648\u0627\u0644:\u200C {{question}}\n\u062C\u0648\
+      \u0627\u0628:\n"
+doc_to_target: "{{candidates[answer-1]}}"
 training_split: train
 validation_split: validation
 test_split: test
 metric_list:
-  - metric: perplexity
+  - metric: exact_match
+    aggeregation: mean
+    higher_is_better: true
   - metric: bleu
+    aggregation: bleu

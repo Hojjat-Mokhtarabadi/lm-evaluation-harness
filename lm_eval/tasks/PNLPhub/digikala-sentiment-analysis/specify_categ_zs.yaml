@@ -4,6 +4,7 @@ dataset_path: PNLPhub/digikala-sentiment-analysis
 dataset_name: null
 output_type: multiple_choice
 use_prompt: "promptsource:specify_categ_zs"
+target_delimiter: <|startoftext|>
 training_split: train
 validation_split: validation
 test_split: test
