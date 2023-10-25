@@ -1,0 +1,21 @@
+group: parsinlu-multiple-choice-llama
+task: which_candidate
+dataset_path: PNLPhub/parsinlu-multiple-choice
+dataset_name: null
+output_type: multiple_choice
+doc_to_text: "<s> [INST] <<SYS>>\u062C\u0648\u0627\u0628 \u0633\u0648\u0627\u0644 \u0632\u06CC\u0631 \u06A9\
+      \u062F\u0627\u0645 \u06AF\u0632\u06CC\u0646\u0647 \u0627\u0633\u062A\u061F<</SYS>>\n\
+      \u0633\u0648\u0627\u0644: {{question}}\n1) {{candidates[0]}}\n2) {{candidates[1]}}\n\
+      3) {{candidates[2]}}\n4) {{candidates[3]}}\n\u062C\u0648\u0627\u0628:\n[/INST]"
+doc_to_target: "{{candidates[answer-1]}}"
+doc_to_target: "a"
+doc_to_choice: ["{{candidates[0]}}", "{{candidates[1]}}" , "{{candidates[2]}}", "{{candidates[3]}}"]
+training_split: train
+validation_split: validation
+test_split: test
+metric_list:
+  - metric: acc
+    aggregation: mean
+    higher_is_better: true
+    ignore_case: true
+    ignore_punctuation: true
