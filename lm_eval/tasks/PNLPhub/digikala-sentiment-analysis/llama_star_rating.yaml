@@ -1,0 +1,28 @@
+group: digi-sentiment-llama
+task: star_rating
+dataset_path: PNLPhub/digikala-sentiment-analysis
+dataset_name: null
+output_type: multiple_choice
+doc_to_text: "<s> [INST] <<SYS>>\u0628\u0627 \u062A\u0648\u062C\u0647 \u0628\u0647 \u0646\u0638\u0631\
+      \ \u062F\u0627\u062F\u0647 \u0634\u062F\u0647 \u0628\u0647 \u0627\u06CC\u0646\
+      \ \u0645\u062D\u0635\u0648\u0644 \u06A9\u062F\u0627\u0645 \u0627\u0645\u062A\
+      \u06CC\u0627\u0632 \u0631\u0627 \u0645\u06CC\u062F\u0647\u06CC\u061F \u06CC\u06A9\
+      \ \u0633\u062A\u0627\u0631\u0647\u060C \u062F\u0648 \u0633\u062A\u0627\u0631\
+      \u0647\u060C \u0633\u0647 \u0633\u062A\u0627\u0631\u0647\u060C \u0686\u0647\u0627\
+      \u0631 \u0633\u062A\u0627\u0631\u0647\u060C \u067E\u0646\u0686 \u0633\u062A\u0627\
+      \u0631\u0647<</SYS>>\n\n\u0646\u0638\u0631: {{Text}}\n\u0627\u0645\u062A\u06CC\u0627\
+      \u0632:\n[/INST]"
+doc_to_target: !function utils.round_score_to_rating
+doc_to_choice: ["\u06CC\u06A9 \u0633\u062A\u0627\u0631\u0647", "\u062F\u0648 \u0633\
+      \u062A\u0627\u0631\u0647", "\u0633\u0647 \u0633\u062A\u0627\u0631\u0647", "\u0686\
+      \u0647\u0627\u0631 \u0633\u062A\u0627\u0631\u0647", "\u067E\u0646\u0686 \u0633\
+      \u062A\u0627\u0631\u0647"]
+training_split: train
+validation_split: validation
+test_split: test
+metric_list:
+  - metric: acc
+    aggregation: mean
+    higher_is_better: true
+    ignore_case: true
+    ignore_punctuation: true
