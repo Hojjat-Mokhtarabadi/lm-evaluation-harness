@@ -1,5 +1,5 @@
 import os
-
+from packaging import version
 import torch
 import transformers
 from transformers.models.auto.modeling_auto import (
@@ -16,14 +16,16 @@ from pathlib import Path
 import torch.nn.functional as F
 
 from lm_eval import utils
-from lm_eval.logger import eval_logger
+from lm_eval.api.instance import Instance
 from lm_eval.api.model import LM
 from lm_eval.api.registry import register_model
 
 from lm_eval.utils import MultiTokenEOSCriteria, stop_sequences_criteria
 
 from accelerate import Accelerator, find_executable_batch_size, DistributedType
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Tuple
+
+eval_logger = utils.eval_logger
 
 
 def _get_accelerate_args(
@@ -107,17 +109,20 @@ class HFLM(LM):
         if not (parallelize or accelerator.num_processes > 1):
             # use user-passed device
             device_list = set(
-                ["cuda", "cpu", "mps"]
+                ["cuda", "cpu"]
                 + [f"cuda:{i}" for i in range(torch.cuda.device_count())]
+                + ["mps", "mps:0"]
             )
             if device:
                 if device not in device_list:
                     device = int(device)
                 self._device = torch.device(device)
                 eval_logger.info(f"Using device '{device}'")
-                if device == "mps":
-                    eval_logger.info(
-                        "MPS is still in beta and only supports float32; setting dtype to float32."
+                if device in ("mps", "mps:0") and version.parse(
+                    torch.__version__
+                ) < version.parse("2.1"):
+                    raise RuntimeError(
+                        f"mps requires torch >= 2.1. You have {torch.__version__}"
                     )
             else:
                 eval_logger.info("Device not specified")
@@ -153,12 +158,17 @@ class HFLM(LM):
             trust_remote_code=trust_remote_code,
         )
 
-        if getattr(self._config, "model_type") in MODEL_FOR_CAUSAL_LM_MAPPING_NAMES:
-            self.AUTO_MODEL_CLASS = transformers.AutoModelForCausalLM
-        elif (
-            not getattr(self._config, "model_type")
+        if (
+            getattr(self._config, "model_type")
             in MODEL_FOR_SEQ_TO_SEQ_CAUSAL_LM_MAPPING_NAMES
         ):
+            # first check if model type is listed under seq2seq models, since some
+            # models like MBart are listed in both seq2seq and causal mistakenly in HF transformers.
+            # these special cases should be treated as seq2seq models.
+            self.AUTO_MODEL_CLASS = transformers.AutoModelForSeq2SeqLM
+        elif getattr(self._config, "model_type") in MODEL_FOR_CAUSAL_LM_MAPPING_NAMES:
+            self.AUTO_MODEL_CLASS = transformers.AutoModelForCausalLM
+        else:
             if not trust_remote_code:
                 eval_logger.warning(
                     "HF model type is neither marked as CausalLM or Seq2SeqLM. \
@@ -167,8 +177,6 @@ class HFLM(LM):
             # if model type is neither in HF transformers causal or seq2seq model registries
             # then we default to AutoModelForCausalLM
             self.AUTO_MODEL_CLASS = transformers.AutoModelForCausalLM
-        else:
-            self.AUTO_MODEL_CLASS = transformers.AutoModelForSeq2SeqLM
 
         assert self.AUTO_MODEL_CLASS in [
             transformers.AutoModelForCausalLM,
@@ -416,12 +424,15 @@ class HFLM(LM):
         utils.clear_torch_cache()
         return batch_size
 
-    def tok_encode(self, string: str, left_truncate_len=None):
+    def tok_encode(
+        self, string: str, left_truncate_len=None, add_special_tokens=None
+    ) -> List[int]:
         """ """
-        if self.AUTO_MODEL_CLASS == transformers.AutoModelForCausalLM:
-            add_special_tokens = False
-        elif self.AUTO_MODEL_CLASS == transformers.AutoModelForSeq2SeqLM:
-            add_special_tokens = True
+        if add_special_tokens is None:
+            if self.AUTO_MODEL_CLASS == transformers.AutoModelForCausalLM:
+                add_special_tokens = False
+            elif self.AUTO_MODEL_CLASS == transformers.AutoModelForSeq2SeqLM:
+                add_special_tokens = True
 
         encoding = self.tokenizer.encode(string, add_special_tokens=add_special_tokens)
 
@@ -437,7 +448,7 @@ class HFLM(LM):
         padding_side: str = "left",
         left_truncate_len: int = None,
         truncation: bool = False,
-    ):
+    ) -> Tuple[List[int], List[int]]:
         # encode a batch of strings. converts to tensors and pads automatically, unlike tok_encode.
         old_padding_side = self.tokenizer.padding_side
         self.tokenizer.padding_side = padding_side
@@ -505,7 +516,7 @@ class HFLM(LM):
             self.tokenizer, stop, 1, context.shape[0]
         )
         return self.model.generate(
-            context,
+            input_ids=context,
             max_length=max_length,
             stopping_criteria=stopping_criteria,
             pad_token_id=self.eot_token_id,
@@ -531,18 +542,24 @@ class HFLM(LM):
 
         return logits
 
-    def _encode_pair(self, context, continuation):
+    def _encode_pair(
+        self, context: str, continuation: str
+    ) -> Tuple[List[int], List[int]]:
         n_spaces = len(context) - len(context.rstrip())
         if n_spaces > 0:
             continuation = context[-n_spaces:] + continuation
             context = context[:-n_spaces]
-        whole_enc = self.tok_encode(context + continuation)
-        context_enc = self.tok_encode(context)
+
+        whole_enc = self.tok_encode(context + continuation, add_special_tokens=False)
+        context_enc = self.tok_encode(context, add_special_tokens=False)
+
+        # whole_enc = self.tok_encode(context + continuation)
+        # context_enc = self.tok_encode(context, add_special_tokens=False)
         context_enc_len = len(context_enc)
         continuation_enc = whole_enc[context_enc_len:]
         return context_enc, continuation_enc
 
-    def loglikelihood(self, requests):
+    def loglikelihood(self, requests: List[Instance]) -> List[Tuple[float, bool]]:
         new_reqs = []
         for context, continuation in [req.args for req in requests]:
             if context == "":
@@ -557,7 +574,7 @@ class HFLM(LM):
 
         return self._loglikelihood_tokens(new_reqs)
 
-    def loglikelihood_rolling(self, requests):
+    def loglikelihood_rolling(self, requests: List[Instance]) -> List[float]:
         loglikelihoods = []
 
         adaptive_batch_size = None
@@ -613,9 +630,29 @@ class HFLM(LM):
 
         return loglikelihoods
 
+    def _batch_scheduler(self, pos, n_reordered_requests):
+        sched = pos // int(len(n_reordered_requests) / self.batch_schedule)
+        if sched in self.batch_sizes:
+            return self.batch_sizes[sched]
+        if (len(self.batch_sizes) > 1) and (
+            self.batch_sizes[sched - 1] == self.max_batch_size
+        ):
+            # if previous batch size is already maximal, skip recomputation
+            self.batch_sizes[sched] = self.max_batch_size
+            return self.batch_sizes[sched]
+        print(
+            f"Passed argument batch_size = auto:{self.batch_schedule}. Detecting largest batch size"
+        )
+        self.batch_sizes[sched] = self._detect_batch_size(n_reordered_requests, pos)
+        print(f"Determined largest batch size: {self.batch_sizes[sched]}")
+        return self.batch_sizes[sched]
+
     def _loglikelihood_tokens(
-        self, requests, disable_tqdm: bool = False, override_bs=None
-    ):
+        self,
+        requests: List[Tuple[Tuple[str, str], List[int], List[int]]],
+        disable_tqdm: bool = False,
+        override_bs: int = None,
+    ) -> List[Tuple[float, bool]]:
         # TODO: implement some kind of efficient-request-middleware that lumps together requests with the same context
         res = []
 
@@ -636,38 +673,22 @@ class HFLM(LM):
         # automatic (variable) batch size detection for vectorization
         # pull longest context sample from request
 
-        def _batch_scheduler(pos):
-            sched = pos // int(n_reordered_requests / self.batch_schedule)
-            if sched in self.batch_sizes:
-                return self.batch_sizes[sched]
-            if (len(self.batch_sizes) > 1) and (
-                self.batch_sizes[sched - 1] == self.max_batch_size
-            ):
-                # if previous batch size is already maximal, skip recomputation
-                self.batch_sizes[sched] = self.max_batch_size
-                return self.batch_sizes[sched]
-            print(
-                f"Passed argument batch_size = auto:{self.batch_schedule}. Detecting largest batch size"
-            )
-            self.batch_sizes[sched] = self._detect_batch_size(
-                re_ord.get_reordered(), pos
-            )
-            print(f"Determined largest batch size: {self.batch_sizes[sched]}")
-            return self.batch_sizes[sched]
-
-        for chunk in utils.chunks(
-            tqdm(re_ord.get_reordered(), disable=(disable_tqdm or (self.rank != 0))),
+        chunks = utils.chunks(
+            re_ord.get_reordered(),
             n=self.batch_size
             if self.batch_size != "auto"
             else override_bs
             if override_bs is not None
             else 0,
-            fn=_batch_scheduler
+            fn=self._batch_scheduler
             if self.batch_size == "auto"
             and n_reordered_requests > 0
             and not override_bs
             else None,
-        ):
+        )
+
+        pbar = tqdm(total=len(requests), disable=(disable_tqdm or (self.rank != 0)))
+        for chunk in chunks:
             inps = []
             cont_toks_list = []
             inplens = []
@@ -804,10 +825,13 @@ class HFLM(LM):
                 res.append(answer)
 
                 self.cache_hook.add_partial("loglikelihood", cache_key, answer)
+                pbar.update(1)
+
+        pbar.close()
 
         return re_ord.get_original(res)
 
-    def greedy_until(self, requests):
+    def generate_until(self, requests: List[Instance]) -> List[str]:
         res = defaultdict(list)
         re_ords = {}
 
@@ -830,13 +854,26 @@ class HFLM(LM):
             re_ords[key] = utils.Reorderer([req.args for req in reqs], _collate)
 
         pbar = tqdm(total=len(requests), disable=(self.rank != 0))
-
+        if self.batch_size == "auto":
+            # using rolling window with maximum context
+            print("Passed argument batch_size = auto. Detecting largest batch size")
+            batch_size = self._detect_batch_size()
+            print(f"Determined Largest batch size: {batch_size}")
+            adaptive_batch_size = batch_size
         # for each different set of kwargs, we execute all requests, by batch.
         for key, re_ord in re_ords.items():
-            for chunk in utils.chunks(
+            chunks = utils.chunks(
                 re_ord.get_reordered(),
-                self.batch_size,
-            ):
+                n=self.batch_size
+                if self.batch_size != "auto"
+                else adaptive_batch_size
+                if adaptive_batch_size is not None
+                else 0,
+                fn=self._batch_scheduler
+                if self.batch_size == "auto" and not adaptive_batch_size
+                else None,
+            )
+            for chunk in chunks:
                 contexts, all_gen_kwargs = zip(*chunk)
                 # we assume all gen kwargs in the batch are the same
                 # this is safe to assume because the `grouper` object ensures it.
@@ -863,8 +900,6 @@ class HFLM(LM):
                     max_gen_toks = kwargs.pop("max_gen_toks")
                 else:
                     max_gen_toks = self.max_gen_toks
-                # first stop sequence is used to halt generation upon encountering
-                primary_until = [until[0]]
 
                 # set the max length in tokens of inputs ("context_enc")
                 if self.AUTO_MODEL_CLASS == transformers.AutoModelForCausalLM:
@@ -890,7 +925,7 @@ class HFLM(LM):
                 cont = self._model_generate(
                     context=context_enc,
                     attention_mask=attn_masks,
-                    stop=primary_until,
+                    stop=until,
                     **kwargs,
                 )
 
@@ -912,7 +947,7 @@ class HFLM(LM):
                     res[key].append(s)
 
                     self.cache_hook.add_partial(
-                        "greedy_until", (context, gen_kwargs), s
+                        "generate_until", (context, gen_kwargs), s
                     )
                     pbar.update(1)
             # reorder this group of results back to original unsorted form

@@ -1,0 +1,3 @@
+group: farsinstruct_eval
+task:
+  - can_you_infer_zs_promptsource
